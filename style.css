@@ -60,7 +60,7 @@ body {
 
 #high-score-display {
     position: absolute;
-    top: 40px; /* Skordan biraz aşağıda */
+    top: 45px; /* Skordan biraz aşağıda */
     left: 10px;
     color: #000080; /* Koyu Lacivert */
     font-size: 16px;
