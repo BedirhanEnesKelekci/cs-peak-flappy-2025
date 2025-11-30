@@ -3,27 +3,29 @@ const ctx = canvas.getContext('2d');
 const scoreDisplay = document.getElementById('score-display');
 const highScoreDisplay = document.getElementById('high-score-display');
 const messageArea = document.getElementById('message-area');
-// ... (const canvas, ctx, scoreDisplay gibi tanımlamaların altına)
+// ... (Place this below the canvas, ctx, scoreDisplay definitions)
 
-// Karakter görselini yükle
+// Load the player sprite image
 const playerSprite = new Image();
-playerSprite.src = 'player_sprite.png'; // Klasördeki görselinizin adı
+playerSprite.src = 'player_sprite.png'; // image located in your directory
 
-// Karakterin genişlik ve yüksekliğini belirle (Görselin boyutlarına göre ayarlayın)
-// Yüklediğiniz görsel 40x40 piksel civarı olabilir, buna göre ayarladım
+// Set the player's width and height (adjust according to sprite size)
+// Assuming the sprite is around 40x40 pixels
 const PLAYER_WIDTH = 40; 
 const PLAYER_HEIGHT = 40;
-// Oyun Ayarları
+
+// Game Settings
 const WIDTH = 600;
 const HEIGHT = 400;
 const JUMP_POWER = 3.7;
 const GRAVITY = 0.28;
 const PIPE_WIDTH = 50;
 const PIPE_GAP = 110;
-const PIPE_INTERVAL = 1800; // Boru oluşturma aralığı (ms)
+const PIPE_INTERVAL = 1800; 
 const EASY_PIPE_GAP = 150;
 const EASY_PIPE_COUNT = 10;
-// Karakter (Oyuncu)
+
+// Player object
 let player = {
     x: 50,
     y: HEIGHT / 2 - PLAYER_HEIGHT / 2,
@@ -32,12 +34,12 @@ let player = {
     velocity: 0
 };
 
-// Oyun Hızı Ayarları
-let currentPipeSpeed = 2; // Başlangıç hızı (Daha önce 2'ydi, şimdi değişken oldu)
-const SPEED_INCREASE_INTERVAL = 3; // Kaç puanda bir hızlanacağı (Örn: Her 3 puanda bir)
-const SPEED_INCREMENT = 0.2; // Her hızlanmada hıza ne kadar ekleneceği
+// Game Speed Settings
+let currentPipeSpeed = 2;
+const SPEED_INCREASE_INTERVAL = 3;
+const SPEED_INCREMENT = 0.2;
 
-// Oyun Durumu
+// Game State
 let isPlaying = false;
 let score = 0;
 let highScore = localStorage.getItem('cspeak_flappy_high_score') || 0;
@@ -49,18 +51,18 @@ let framesSinceStart = 0;
 
 highScoreDisplay.textContent = `En Yüksek Skor: ${highScore}`;
 
-// --- Çizim Fonksiyonları ---
+// --- Drawing Functions ---
 
 function drawPlayer() {
-    // Görseli çiz: (görsel, x, y, genişlik, yükseklik)
+    // Draw the sprite image
     ctx.drawImage(playerSprite, player.x, player.y, player.width, player.height);
 }
 
 function drawPipe(pipe) {
-    ctx.fillStyle = '#ff8c00'; // Turuncu
-    // Üst Boru
+    ctx.fillStyle = '#ff8c00';
+    // Top Pipe
     ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
-    // Alt Boru
+    // Bottom Pipe
     ctx.fillRect(pipe.x, pipe.bottomY, PIPE_WIDTH, HEIGHT - pipe.bottomY);
 }
 
@@ -68,14 +70,16 @@ function clearCanvas() {
     ctx.clearRect(0, 0, WIDTH, HEIGHT);
 }
 
-// --- Oyun Mekaniği ---
+// --- Game Mechanics ---
 
 function createPipe() {
-   let currentGap = PIPE_GAP;
-if (score < EASY_PIPE_COUNT) {
-currentGap = EASY_PIPE_GAP;
-}
-// Rastgele boşluk yüksekliği belirle
+    let currentGap = PIPE_GAP;
+    
+    if (score < EASY_PIPE_COUNT) {
+        currentGap = EASY_PIPE_GAP;
+    }
+
+    // Generate a random gap height
     const minHeight = 50;
     const maxHeight = HEIGHT - currentGap - 50;
     const topHeight = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
@@ -91,92 +95,92 @@ currentGap = EASY_PIPE_GAP;
 
 function updateGame(deltaTime) {
     if (!isPlaying) return;
-    framesSinceStart++;
-    // 1. Oyuncu Hareketini Güncelle
-if (framesSinceStart > GRAVITY_DELAY_FRAMES) {    
-player.velocity += GRAVITY; // Yerçekimi
-}
-    player.y += player.velocity;;
 
-    // 2. Boru Hareketini ve Çizimini Güncelle
+    framesSinceStart++;
+
+    // 1. Update Player Movement
+    if (framesSinceStart > GRAVITY_DELAY_FRAMES) {    
+        player.velocity += GRAVITY; // Gravity
+    }
+    player.y += player.velocity;
+
+    // 2. Update and Draw Pipes
     pipes.forEach(pipe => {
-        pipe.x -= currentPipeSpeed; // Boruyu sola hareket ettir
+        pipe.x -= currentPipeSpeed; // Move pipe left
         drawPipe(pipe);
 
-        // Boru geçti kontrolü ve puanlama
+        // Check if pipe was passed & update score
         if (!pipe.passed && pipe.x + PIPE_WIDTH < player.x) {
             score++;
             scoreDisplay.textContent = `Skor: ${score}`;
             pipe.passed = true;
 
-    // YENİ HIZ KONTROL BLOĞU
-    // Skor, hızlanma aralığının tam katı ise (Örn: 10, 20, 30...)
-    if (score % SPEED_INCREASE_INTERVAL === 0) {
-        currentPipeSpeed += SPEED_INCREMENT;
-        console.log(`Oyun Hızlandı! Yeni Hız: ${currentPipeSpeed.toFixed(2)}`); 
-        // Konsolda hızlandığını görebilirsiniz.
-    }
-}
-    // Ekran dışına çıkan boruları sil
+            // NEW SPEED CONTROL BLOCK
+            // If score is a multiple of the speed increase interval
+            if (score % SPEED_INCREASE_INTERVAL === 0) {
+                currentPipeSpeed += SPEED_INCREMENT;
+                console.log(`Speed Increased! New Speed: ${currentPipeSpeed.toFixed(2)}`);
+            }
+        }
+    });
+
+    // Remove pipes that moved off-screen
     pipes = pipes.filter(pipe => pipe.x + PIPE_WIDTH > 0);
 
-    // Yeni Boru Oluşturma
+    // Create new pipe at interval
     const now = Date.now();
     if (now - lastPipeTime > PIPE_INTERVAL) {
         createPipe();
         lastPipeTime = now;
     }
 
-    // 3. Çarpışma Kontrolü
+    // 3. Collision Check
     if (checkCollision()) {
         gameOver();
         return;
     }
-    
-    // 4. Karakteri Çiz
+
+    // 4. Draw Player
     clearCanvas();
     pipes.forEach(drawPipe);
-    drawPlayer()
-    });
+    drawPlayer();
 }
 
 function checkCollision() {
-    // 1. Zemin ve Tavan Çarpışması Kontrolü
-    // Eğer top zeminin altına (HEIGHT) veya tavanın üstüne (0) çıkarsa çarpışma var demektir.
-    if (player.y + player.height > HEIGHT ||  player.y < 0) {
+    // 1. Check collision with floor or ceiling
+    if (player.y + player.height > HEIGHT || player.y < 0) {
         return true;
     }
 
-    // 2. Boru Çarpışması Kontrolü
+    // 2. Check collision with pipes
     for (const pipe of pipes) {
-        // Önce X Ekseninde Çarpışma Kontrolü: Topun sağ kenarı borunun sol kenarından büyükse 
-        // VE topun sol kenarı borunun sağ kenarından küçükse (yani yatayda üst üste geldilerse)
+
+        // Check X-axis overlap
         if (player.x + player.width > pipe.x && player.x < pipe.x + PIPE_WIDTH) {
-            
-            // Şimdi Y Ekseninde Çarpışma Kontrolü:
-            // Topun üst kenarı üst borunun altından küçükse (üst boruya çarptı)
-            // VEYA topun alt kenarı alt borunun üstünden büyükse (alt boruya çarptı)
+
+            // Check Y-axis collision:
+            // If player's top hits top pipe or player's bottom hits bottom pipe
             if (player.y < pipe.topHeight || player.y + player.height > pipe.bottomY) {
-                return true; // Çarpışma var!
+                return true; 
             }
         }
     }
 
-    // Hiçbir çarpışma yoksa
     return false;
 }
-// --- Oyun Kontrol Fonksiyonları ---
+
+// --- Game Control Functions ---
 
 function jump() {
     if (isPlaying) {
-        player.velocity = -JUMP_POWER; // Negatif hız = yukarı hareket
+        player.velocity = -JUMP_POWER; // Negative velocity = upward movement
     }
 }
 
 function startGame() {
     if (isPlaying) return;
 
-    // Durumu sıfırla
+    // Reset game state
     isPlaying = true;
     score = 0;
     player.y = HEIGHT / 2;
@@ -184,9 +188,9 @@ function startGame() {
     pipes = [];
     scoreDisplay.textContent = `Skor: 0`;
     messageArea.style.display = 'none';
-framesSinceStart = 0;
+    framesSinceStart = 0;
 
-    // İlk boruyu oluştur
+    // Create the first pipe
     lastPipeTime = Date.now();
     createPipe();
     
@@ -196,7 +200,7 @@ framesSinceStart = 0;
         const deltaTime = now - lastTime;
         updateGame(deltaTime);
         lastTime = now;
-    }, 1000 / 60); // Saniyede 60 kare (FPS)
+    }, 1000 / 60); // 60 FPS
 }
 
 function gameOver() {
@@ -205,7 +209,7 @@ function gameOver() {
     messageArea.textContent = 'Oyun Bitti! Tekrar oynamak için tıkla.';
     messageArea.style.display = 'block';
 
-    // Yüksek Skor Güncelleme
+    // Update High Score
     if (score > highScore) {
         highScore = score;
         localStorage.setItem('cspeak_flappy_high_score', highScore);
@@ -213,17 +217,18 @@ function gameOver() {
     }
 }
 
-// --- Olay Dinleyicileri ---
+// --- Event Listeners ---
 
-// Oyunu başlatmak için tıklama/dokunma
+// Click/tap to start the game
 messageArea.addEventListener('click', startGame);
 canvas.addEventListener('click', jump);
+
 document.addEventListener('keydown', (e) => {
     if (e.code === 'Space' || e.code === 'ArrowUp') {
-        e.preventDefault(); // Sayfanın kaymasını engelle
+        e.preventDefault(); // Prevent page scroll
         jump();
     }
 });
 
-// Başlangıç mesajını göster
+// Show the start message
 messageArea.style.display = 'block';
