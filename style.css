@@ -43,14 +43,29 @@ body {
     font-size: 24px;
     font-weight: bold;
     z-index: 3;
+    background-color: rgba(255, 255, 255, 0.7); /* Beyaz arka plan, %70 şeffaflık */
+    padding: 3px 8px;
+    border-radius: 5px;
 }
 
 #score-display {
+    position: absolute;
+    top: 10px;
     left: 10px;
+    color: #000080; /* Koyu Lacivert */
+    font-size: 20px;
+    font-weight: bold;
+    z-index: 10;
 }
 
 #high-score-display {
-    right: 10px;
+    position: absolute;
+    top: 35px; /* Skordan biraz aşağıda */
+    left: 10px;
+    color: #000080; /* Koyu Lacivert */
+    font-size: 16px;
+    font-weight: bold;
+    z-index: 10;
 }
 
 #message-area {
