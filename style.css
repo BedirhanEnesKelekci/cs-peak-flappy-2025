@@ -39,28 +39,23 @@ body {
 #score-display, #high-score-display {
     position: absolute;
     top: 10px;
-    color: #ff8c00; /* Turuncu skor */
-    font-size: 24px;
+    left: 10px;
+    color: #000080; /* Turuncu skor */
+    font-size: 20px;
     font-weight: bold;
-    z-index: 3;
+    z-index: 10;
     background-color: rgba(255, 255, 255, 0.7); /* Beyaz arka plan, %70 şeffaflık */
     padding: 3px 8px;
     border-radius: 5px;
 }
 
 #score-display {
-    position: absolute;
-    top: 10px;
     left: 10px;
-    color: #000080; /* Koyu Lacivert */
-    font-size: 20px;
-    font-weight: bold;
-    z-index: 10;
 }
 
 #high-score-display {
     position: absolute;
-    top: 45px; /* Skordan biraz aşağıda */
+    top: 40px; /* Skordan biraz aşağıda */
     left: 10px;
     color: #000080; /* Koyu Lacivert */
     font-size: 16px;
