@@ -2,32 +2,43 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh; /* Mobil cihazlarda tam ekran sığması için */
+    min-height: 100vh;
     margin: 0;
     font-family: sans-serif;
-    background-color: #333; /* Koyu gri dış arka plan */
+    background-color: #333; 
 }
 
-/* YENİ SARMALAYICI: Oyun ve Leaderboard'u tutar */
+/* OYUN VE LEADERBOARD'U SARAN ANA KONTEYNER */
 #game-container-wrapper { 
     display: flex; 
-    flex-direction: column; /* Varsayılan olarak (Mobil) alt alta dizeriz */
+    flex-direction: column; /* Varsayılan: Alt alta (Mobil Uyumlu) */
     align-items: center; 
     margin: 20px auto;
     width: fit-content; 
-    max-width: 95vw; /* Mobil genişliğini koru */
+    max-width: 95vw;
 }
 
 #game-container {
-    border: 5px solid #ff8c00; /* Turuncu sınır */
-    background-color: #000; /* Siyah oyun alanı kutusu */
+    border: 5px solid #ff8c00; 
+    background-color: #000; 
     box-shadow: 0 0 20px #ff8c00;
     position: relative;
     overflow: hidden;
-    margin-bottom: 20px; /* Leaderboard ile arasına boşluk koyar */
+    margin-bottom: 20px;
+    width: 600px; /* Masaüstü varsayılan genişliği */
+    max-width: 95vw; /* Mobil cihazlarda taşmayı engeller */
 }
 
-/* Arka Plan Yazısı - CS PEAK 2025 */
+/* Canvas'ın boyutunu mobil için esnek hale getir */
+#gameCanvas {
+    display: block;
+    background-color: #000;
+    z-index: 2;
+    width: 100%; /* Konteyner genişliğine uyum sağla */
+    height: auto;
+}
+
+/* Arka Plan Yazısı */
 #game-container::before {
     content: "CS PEAK 2025";
     position: absolute;
@@ -36,23 +47,17 @@ body {
     transform: translate(-50%, -50%);
     font-size: 80px;
     font-weight: bold;
-    color: rgba(255, 140, 0, 0.1); /* Yarı şeffaf turuncu */
+    color: rgba(255, 140, 0, 0.1);
     z-index: 1; 
     pointer-events: none;
 }
 
-#gameCanvas {
-    display: block;
-    background-color: #000;
-    z-index: 2;
-}
-
-/* SKORLARIN RENGİ VE KONUMU */
+/* SKOR ALANLARI */
 #score-display, #high-score-display {
     position: absolute;
     top: 10px;
     left: 10px;
-    color: #000080; /* Koyu Lacivert */
+    color: #000080; 
     font-size: 20px;
     font-weight: bold;
     z-index: 10;
@@ -60,13 +65,11 @@ body {
     padding: 3px 8px;
     border-radius: 5px;
 }
-
 #high-score-display {
     top: 40px; 
     left: 10px;
     color: #000080; 
     font-size: 16px;
-    font-weight: bold;
 }
 
 #message-area {
@@ -84,11 +87,11 @@ body {
     text-align: center;
 }
 
-/* LEADERBOARD STİLLERİ (Oyunun altına hizalandı) */
+/* LEADERBOARD STİLLERİ */
 #leaderboard-container {
-    width: 600px; /* Oyun genişliğinde başla */
-    max-width: 100%; /* Mobil cihazlarda tam genişlik kullan */
-    background-color: #222; /* Koyu arka plan */
+    width: 600px; 
+    max-width: 95vw; /* Mobil cihazlarda sığmasını sağla */
+    background-color: #222; 
     color: #fff;
     padding: 15px;
     border-radius: 8px;
@@ -111,7 +114,7 @@ body {
     font-size: 1.1em;
     padding: 5px 0;
     border-bottom: 1px dashed #444;
-    color: #fff;
+    color: #fff; /* İsimlerin görünmesi için beyaz renk */
     display: flex;
     justify-content: space-between;
 }
@@ -119,15 +122,14 @@ body {
     border-bottom: none;
 }
 
-
 /* MASAÜSTÜ İÇİN ÖZEL DÜZENLEME (Yan yana) */
 @media (min-width: 950px) {
     #game-container-wrapper {
-        flex-direction: row; /* Geniş ekranda yan yana diz */
-        gap: 40px; /* Aralarına boşluk koy */
+        flex-direction: row; 
+        gap: 40px; 
     }
     #leaderboard-container {
-        width: 300px; /* Yan yana dururken daha dar olabilir */
+        width: 300px; 
         max-width: none;
     }
 }
