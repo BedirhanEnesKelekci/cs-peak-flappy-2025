@@ -14,7 +14,26 @@
         <div id="message-area">Oyunu başlatmak için tıkla!</div>
         <div id="high-score-display">En Yüksek Skor: 0</div>
     </div>
+    <div id="leaderboard-container">
+    <h3>🏆 En İyi 10 Skor 🏆</h3>
+    <ol id="leaderboard-list"></ol>
+</div>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
-    <script src="script.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBM_Spg31rUpJc8kdQEmG3r0hSlE1Zgl4g", 
+    authDomain: "cs-peak-flappy-2025.firebaseapp.com",
+    databaseURL: "https://BURAYA_SİZİN_PROJE_ID'niz-default-rtdb.firebaseio.com",
+    projectId: "cs-peak-flappy-2025",
+  };
+
+  // Firebase'i başlat ve veritabanı bağlantısını tanımla
+  firebase.initializeApp(firebaseConfig);
+  const database = firebase.database(); 
+</script>
+
+<script src="script.js"></script>
 </body>
 </html>
