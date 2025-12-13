@@ -72,7 +72,7 @@ let gameInterval;
 // Delay gravity at the start of the game
 const GRAVITY_DELAY_FRAMES = 30;
 let framesSinceStart = 0;
-
+let currentUsername = null;
 highScoreDisplay.textContent = `High Score: ${highScore}`;
 
 // --------------------
@@ -211,12 +211,29 @@ function jump() {
 function startGame() {
     if (isPlaying) return;
 
+    // 🔥 YENİ KONTROL: Eğer isim belirlenmemişse (currentUsername null ise), önce ismi sor
+    if (currentUsername === null) {
+        let name = prompt("Lütfen Adınızı ve Soyadınızı girin (Sıralama için gereklidir):", "Anonim");
+        
+        // Eğer kullanıcı iptal eder veya boş bırakırsa oyunu başlatma
+        if (name === null || name.trim() === "") {
+            messageArea.textContent = "Başlamak için Ad/Soyad girmeniz gerekiyor!";
+            return;
+        }
+        currentUsername = name.trim();
+        // Mesajı kullanıcıya özel hale getir
+        messageArea.textContent = `${currentUsername}, oyunu başlatmak için tıkla!`;
+    }
+
+    // Oyun Başlatma Kodu (Eski kodunuzun bir kısmı)
     isPlaying = true;
+    currentPipeSpeed = 2; // Hızı sıfırla
+
     score = 0;
     player.y = HEIGHT / 2;
     player.velocity = 0;
     pipes = [];
-    scoreDisplay.textContent = 'Score: 0';
+    scoreDisplay.textContent = 'Skor: 0';
     messageArea.style.display = 'none';
     framesSinceStart = 0;
 
@@ -230,7 +247,6 @@ function startGame() {
         lastTime = now;
     }, 1000 / 60);
 }
-
 // Handle game over state
 function gameOver() {
     clearInterval(gameInterval);
