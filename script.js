@@ -1,8 +1,11 @@
+// Global Değişkenler
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const scoreDisplay = document.getElementById('score-display');
 const highScoreDisplay = document.getElementById('high-score-display');
 const messageArea = document.getElementById('message-area');
+// 🔥 LEADERBOARD HTML ELEMANI
+const leaderboardList = document.getElementById('leaderboard-list'); 
 
 // --------------------
 // PLAYER SPRITE
@@ -10,7 +13,6 @@ const messageArea = document.getElementById('message-area');
 
 // Create image object for the player character
 const playerSprite = new Image();
-
 // Path to the player sprite image file
 playerSprite.src = 'player_sprite.png';
 
@@ -22,13 +24,13 @@ const PLAYER_HEIGHT = 40;
 // GAME SETTINGS
 // --------------------
 
-const WIDTH = 600;               // Game canvas width
-const HEIGHT = 400;              // Game canvas height
-const JUMP_POWER = 3.7;          // Jump strength
-const GRAVITY = 0.28;            // Gravity force
-const PIPE_WIDTH = 50;           // Pipe width
-const PIPE_GAP = 110;            // Gap between top and bottom pipes
-const PIPE_INTERVAL = 1800;      // Time between pipe generation (ms)
+const WIDTH = 600; 
+const HEIGHT = 400; 
+const JUMP_POWER = 3.7; 
+const GRAVITY = 0.28; 
+const PIPE_WIDTH = 50; 
+const PIPE_GAP = 110; 
+const PIPE_INTERVAL = 1800; 
 
 // Easier settings for the beginning of the game
 const EASY_PIPE_GAP = 150;
@@ -54,9 +56,9 @@ let player = {
 // GAME SPEED SETTINGS
 // --------------------
 
-let currentPipeSpeed = 2;               // Initial pipe speed
-const SPEED_INCREASE_INTERVAL = 3;      // Score interval for speed increase
-const SPEED_INCREMENT = 0.2;            // Speed increase amount
+let currentPipeSpeed = 2; 
+const SPEED_INCREASE_INTERVAL = 3; 
+const SPEED_INCREMENT = 0.2; 
 
 // --------------------
 // GAME STATE
@@ -72,8 +74,11 @@ let gameInterval;
 // Delay gravity at the start of the game
 const GRAVITY_DELAY_FRAMES = 30;
 let framesSinceStart = 0;
+
+// 🔥 KULLANICI ADI DEĞİŞKENİ
 let currentUsername = null;
-highScoreDisplay.textContent = `High Score: ${highScore}`;
+
+highScoreDisplay.textContent = `En Yüksek Skor: ${highScore}`;
 
 // --------------------
 // DRAWING FUNCTIONS
@@ -139,7 +144,7 @@ function updateGame(deltaTime) {
 
         if (!pipe.passed && pipe.x + PIPE_WIDTH < player.x) {
             score++;
-            scoreDisplay.textContent = `Score: ${score}`;
+            scoreDisplay.textContent = `Skor: ${score}`;
             pipe.passed = true;
 
             if (score % SPEED_INCREASE_INTERVAL === 0) {
@@ -211,24 +216,21 @@ function jump() {
 function startGame() {
     if (isPlaying) return;
 
-    // 🔥 YENİ KONTROL: Eğer isim belirlenmemişse (currentUsername null ise), önce ismi sor
+    // 🔥 İSİM KONTROLÜ
     if (currentUsername === null) {
         let name = prompt("Lütfen Adınızı ve Soyadınızı girin (Sıralama için gereklidir):", "Anonim");
         
-        // Eğer kullanıcı iptal eder veya boş bırakırsa oyunu başlatma
         if (name === null || name.trim() === "") {
             messageArea.textContent = "Başlamak için Ad/Soyad girmeniz gerekiyor!";
             return;
         }
         currentUsername = name.trim();
-        // Mesajı kullanıcıya özel hale getir
         messageArea.textContent = `${currentUsername}, oyunu başlatmak için tıkla!`;
     }
 
-    // Oyun Başlatma Kodu (Eski kodunuzun bir kısmı)
+    // Oyun Başlatma
     isPlaying = true;
     currentPipeSpeed = 2; // Hızı sıfırla
-
     score = 0;
     player.y = HEIGHT / 2;
     player.velocity = 0;
@@ -247,18 +249,35 @@ function startGame() {
         lastTime = now;
     }, 1000 / 60);
 }
+
 // Handle game over state
 function gameOver() {
     clearInterval(gameInterval);
     isPlaying = false;
-    messageArea.textContent = 'Game Over! Click to play again.';
-    messageArea.style.display = 'block';
+    
+    // 🔥 1. FIREBASE SKOR GÖNDERME
+    if (score > 0 && currentUsername) {
+        // global 'database' değişkenini (index.html'den) kullanıyoruz
+        database.ref('scores').push({ 
+            name: currentUsername,
+            score: score,
+            timestamp: Date.now()
+        });
+    }
 
+    // 2. Yüksek skor yerel kaydı
     if (score > highScore) {
         highScore = score;
         localStorage.setItem('cspeak_flappy_high_score', highScore);
-        highScoreDisplay.textContent = `High Score: ${highScore}`;
+        highScoreDisplay.textContent = `En Yüksek Skor: ${highScore}`;
     }
+    
+    // 3. Mesajı güncelle
+    messageArea.textContent = `Oyun Bitti, ${currentUsername}! Skorunuz: ${score}. Tekrar oynamak için tıkla.`;
+    messageArea.style.display = 'block';
+
+    // 4. Leaderboard'u Güncelle
+    fetchLeaderboard(); 
 }
 
 // --------------------
@@ -275,5 +294,46 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+// --------------------
+// 🔥 FIREBASE LEADERBOARD FONKSİYONLARI
+// --------------------
+
+function fetchLeaderboard() {
+    // Leaderboard listesini temizle
+    leaderboardList.innerHTML = '';
+    
+    // Veritabanından en iyi 5 skoru çek
+    database.ref('scores')
+        .orderByChild('score') 
+        .limitToLast(5)      // Sadece en iyi 5 skoru çek
+        .once('value', (snapshot) => {
+            const scores = [];
+            snapshot.forEach(childSnapshot => {
+                scores.push(childSnapshot.val());
+            });
+
+            // Yüksekten düşüğe sırala
+            scores.reverse(); 
+
+            // Listeyi HTML'e yaz
+            scores.forEach((item, index) => {
+                const listItem = document.createElement('li');
+                // Formatı: (Sıra No). İsim Soyisim - Skor
+                listItem.innerHTML = `
+                    <span>${index + 1}. ${item.name}</span>
+                    <span>${item.score}</span>
+                `;
+                leaderboardList.appendChild(listItem);
+            });
+        })
+        .catch(error => {
+            console.error("Firebase'den skorlar çekilemedi:", error);
+            leaderboardList.innerHTML = '<li>Skorlar yüklenemedi. Firebase bağlantınızı ve kurallarınızı kontrol edin.</li>';
+        });
+}
+
 // Show start message on load
 messageArea.style.display = 'block';
+
+// 🔥 Sayfa ilk açıldığında Leaderboard'u çek
+fetchLeaderboard();
