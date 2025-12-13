@@ -11,7 +11,7 @@ body {
 /* YENİ SARMALAYICI: Oyun ve Leaderboard'u tutar */
 #game-container-wrapper { 
     display: flex; 
-    flex-direction: column; /* Varsayılan olarak (Mobil) alt alta dizer */
+    flex-direction: column; /* Varsayılan olarak (Mobil) alt alta dizeriz */
     align-items: center; 
     margin: 20px auto;
     width: fit-content; 
@@ -84,7 +84,7 @@ body {
     text-align: center;
 }
 
-/* LEADERBOARD STİLLERİ */
+/* LEADERBOARD STİLLERİ (Oyunun altına hizalandı) */
 #leaderboard-container {
     width: 600px; /* Oyun genişliğinde başla */
     max-width: 100%; /* Mobil cihazlarda tam genişlik kullan */
