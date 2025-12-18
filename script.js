@@ -8,12 +8,8 @@ const highScoreDisplay = document.getElementById('high-score-display');
 const messageArea = document.getElementById('message-area');
 const leaderboardList = document.getElementById('leaderboard-list'); 
 
-// 🔥 ADIM 1: Firebase Anonim Giriş
 firebase.auth().signInAnonymously()
-    .then(() => {
-        console.log("Firebase Girişi Başarılı.");
-        fetchLeaderboard(); 
-    })
+    .then(() => { fetchLeaderboard(); })
     .catch((error) => console.error("Giriş Hatası:", error));
 
 // --------------------
@@ -26,56 +22,41 @@ const PLAYER_WIDTH = 40;
 const PLAYER_HEIGHT = 40;
 const WIDTH = 600; 
 const HEIGHT = 400; 
-const JUMP_POWER = 3.7; 
-const GRAVITY = 0.28; 
+const JUMP_POWER = 3.8; 
+const GRAVITY = 0.25; 
 const PIPE_WIDTH = 50; 
-const PIPE_GAP = 110; 
+const PIPE_GAP = 120; 
 const PIPE_INTERVAL = 1800; 
-const EASY_PIPE_GAP = 150;
-const EASY_PIPE_COUNT = 10;
-const HITBOX_PADDING_X = 5;
-const HITBOX_PADDING_Y = 5;
 
-let player = { x: 50, y: HEIGHT / 2 - PLAYER_HEIGHT / 2, width: PLAYER_WIDTH, height: PLAYER_HEIGHT, velocity: 0 };
-let currentPipeSpeed = 2; 
-const SPEED_INCREASE_INTERVAL = 3; 
-const SPEED_INCREMENT = 0.2; 
+let player = { x: 50, y: HEIGHT / 2, width: PLAYER_WIDTH, height: PLAYER_HEIGHT, velocity: 0 };
+let currentPipeSpeed = 2.5; 
 let isPlaying = false;
 let score = 0;
 let highScore = localStorage.getItem('cspeak_flappy_high_score') || 0;
 let pipes = [];
 let lastPipeTime = 0;
-let gameInterval;
-const GRAVITY_DELAY_FRAMES = 30;
+let animationFrameId; // iOS akıcılığı için setInterval yerine bu kullanılacak
 let framesSinceStart = 0;
 let currentUsername = null;
 
 highScoreDisplay.textContent = `En Yüksek Skor: ${highScore}`;
 
 // --------------------
-// DRAWING & MECHANICS
+// GAME MECHANICS
 // --------------------
-function drawPlayer() { ctx.drawImage(playerSprite, player.x, player.y, player.width, player.height); }
-function drawPipe(pipe) {
-    ctx.fillStyle = '#ff8c00';
-    ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
-    ctx.fillRect(pipe.x, pipe.bottomY, PIPE_WIDTH, HEIGHT - pipe.bottomY);
-}
-function clearCanvas() { ctx.clearRect(0, 0, WIDTH, HEIGHT); }
-
 function createPipe() {
-    let currentGap = score < EASY_PIPE_COUNT ? EASY_PIPE_GAP : PIPE_GAP;
     const minHeight = 50;
-    const maxHeight = HEIGHT - currentGap - 50;
+    const maxHeight = HEIGHT - PIPE_GAP - 50;
     const topHeight = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
-    const bottomY = topHeight + currentGap;
-    pipes.push({ x: WIDTH, topHeight, bottomY, passed: false });
+    pipes.push({ x: WIDTH, topHeight, bottomY: topHeight + PIPE_GAP, passed: false });
 }
 
-function updateGame() {
+// iOS ve Modern Tarayıcılar için Akıcı Döngü
+function gameLoop() {
     if (!isPlaying) return;
+
     framesSinceStart++;
-    if (framesSinceStart > GRAVITY_DELAY_FRAMES) player.velocity += GRAVITY;
+    if (framesSinceStart > 15) player.velocity += GRAVITY;
     player.y += player.velocity;
 
     pipes.forEach(pipe => {
@@ -84,7 +65,7 @@ function updateGame() {
             score++;
             scoreDisplay.textContent = `Skor: ${score}`;
             pipe.passed = true;
-            if (score % SPEED_INCREASE_INTERVAL === 0) currentPipeSpeed += SPEED_INCREMENT;
+            if (score % 3 === 0) currentPipeSpeed += 0.15;
         }
     });
 
@@ -96,113 +77,116 @@ function updateGame() {
     }
 
     if (checkCollision()) { gameOver(); return; }
-    clearCanvas();
-    pipes.forEach(drawPipe);
-    drawPlayer();
+
+    ctx.clearRect(0, 0, WIDTH, HEIGHT);
+    pipes.forEach(pipe => {
+        ctx.fillStyle = '#ff8c00';
+        ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
+        ctx.fillRect(pipe.x, pipe.bottomY, PIPE_WIDTH, HEIGHT - pipe.bottomY);
+    });
+    ctx.drawImage(playerSprite, player.x, player.y, player.width, player.height);
+
+    animationFrameId = requestAnimationFrame(gameLoop);
 }
 
 function checkCollision() {
-    const hitboxX1 = player.x + HITBOX_PADDING_X;
-    const hitboxY1 = player.y + HITBOX_PADDING_Y;
-    const hitboxX2 = player.x + player.width - HITBOX_PADDING_X;
-    const hitboxY2 = player.y + player.height - HITBOX_PADDING_Y;
-    if (hitboxY2 > HEIGHT || hitboxY1 < 0) return true;
+    if (player.y + player.height > HEIGHT || player.y < 0) return true;
     for (const pipe of pipes) {
-        if (hitboxX2 > pipe.x && hitboxX1 < pipe.x + PIPE_WIDTH) {
-            if (hitboxY1 < pipe.topHeight || hitboxY2 > pipe.bottomY) return true;
+        if (player.x + 30 > pipe.x && player.x + 10 < pipe.x + PIPE_WIDTH) {
+            if (player.y + 10 < pipe.topHeight || player.y + 30 > pipe.bottomY) return true;
         }
     }
     return false;
 }
 
-// --------------------
-// CORE CONTROLS
-// --------------------
-function jump() {
-    if (isPlaying) player.velocity = -JUMP_POWER;
-}
-
 function startGame() {
     if (isPlaying) return;
     if (currentUsername === null) {
-        let name = prompt("Lütfen Adınızı ve Soyadınızı girin:", "");
-        if (name === null || name.trim() === "") return;
+        let name = prompt("Lütfen Ad Soyad girin:", "");
+        if (!name) return;
         currentUsername = name.trim();
     }
     isPlaying = true;
-    currentPipeSpeed = 2;
     score = 0;
     player.y = HEIGHT / 2;
     player.velocity = 0;
     pipes = [];
+    currentPipeSpeed = 2.5;
     scoreDisplay.textContent = 'Skor: 0';
     messageArea.style.display = 'none';
-    framesSinceStart = 0;
     lastPipeTime = Date.now();
-    createPipe();
-    if (gameInterval) clearInterval(gameInterval);
-    gameInterval = setInterval(updateGame, 1000 / 60);
+    framesSinceStart = 0;
+    
+    cancelAnimationFrame(animationFrameId);
+    gameLoop();
 }
 
 function gameOver() {
-    clearInterval(gameInterval);
     isPlaying = false;
+    cancelAnimationFrame(animationFrameId);
+    
     const user = firebase.auth().currentUser;
     if (score > 0 && currentUsername && user) {
-        database.ref('scores/' + user.uid).set({ name: currentUsername, score: score, timestamp: Date.now() })
-        .then(() => fetchLeaderboard());
+        database.ref('scores/' + user.uid).set({
+            name: currentUsername,
+            score: score,
+            timestamp: Date.now()
+        }).then(() => fetchLeaderboard());
     }
+
     if (score > highScore) {
         highScore = score;
         localStorage.setItem('cspeak_flappy_high_score', highScore);
         highScoreDisplay.textContent = `En Yüksek Skor: ${highScore}`;
     }
-    messageArea.textContent = `Oyun Bitti, ${currentUsername}! Skor: ${score}. Tekrar oynamak için dokun.`;
+    
+    messageArea.textContent = `Bitti! Skor: ${score}. Devam Etmek İçin Dokun!`;
     messageArea.style.display = 'block';
 }
 
 // --------------------
-// 🔥 SON DOKUNUŞ: EVENT LISTENERS (Heryerden Tıklama Fix)
+// 🔥 GLOBAL CONTROLS (Tüm Cihazlar İçin)
 // --------------------
-
-function handleInteraction(e) {
-    // Eğer tıklanan şey bir buton veya link değilse (oyun alanına tıklanmışsa)
-    if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'A') {
-        if (!isPlaying) {
-            startGame();
-        } else {
-            jump();
-        }
+function handleAction(e) {
+    if (e.target.id === 'leaderboard-list' || e.target.tagName === 'LI') return;
+    
+    if (!isPlaying) {
+        startGame();
+    } else {
+        player.velocity = -JUMP_POWER;
     }
 }
 
-// Mouse ve Dokunma olaylarını tek bir yerden yönetiyoruz
-document.addEventListener('mousedown', handleInteraction);
-document.addEventListener('touchstart', (e) => {
-    handleInteraction(e);
-    if (isPlaying && e.cancelable) e.preventDefault(); // Kaymayı engelle
+// Hem dokunma hem tıklama için tek kontrol
+window.addEventListener('touchstart', (e) => {
+    handleAction(e);
+    if (isPlaying && e.cancelable) e.preventDefault();
 }, { passive: false });
 
-document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' || e.code === 'ArrowUp') {
-        e.preventDefault();
-        if (!isPlaying) startGame(); else jump();
-    }
+window.addEventListener('mousedown', (e) => {
+    if (e.type === 'mousedown' && 'ontouchstart' in window) return; // Çift tetiklemeyi engelle
+    handleAction(e);
+});
+
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') { e.preventDefault(); handleAction(e); }
 });
 
 // --------------------
-// LEADERBOARD & RESIZE
+// SCOREBOARD & RESIZE
 // --------------------
 function fetchLeaderboard() {
-    if (!leaderboardList) return;
     database.ref('scores').orderByChild('score').limitToLast(5).once('value', (snapshot) => {
         const scores = [];
-        snapshot.forEach(childSnapshot => scores.push(childSnapshot.val()));
+        snapshot.forEach(child => {
+            scores.push(child.val());
+        });
+        // Büyükten küçüğe sırala ve listeyi oluştur
         scores.sort((a, b) => b.score - a.score);
-        leaderboardList.innerHTML = ''; 
-        scores.forEach((item, index) => {
+        leaderboardList.innerHTML = '';
+        scores.forEach((item, i) => {
             const li = document.createElement('li');
-            li.innerHTML = `<span>${index + 1}. ${item.name}</span><span>${item.score}</span>`;
+            li.innerHTML = `<span>${i + 1}. ${item.name}</span> <span>${item.score}</span>`;
             leaderboardList.appendChild(li);
         });
     });
@@ -214,9 +198,6 @@ function resizeCanvas() {
     if (cw < WIDTH) {
         canvas.style.width = cw + 'px';
         canvas.style.height = (cw / (WIDTH / HEIGHT)) + 'px';
-    } else {
-        canvas.style.width = WIDTH + 'px';
-        canvas.style.height = HEIGHT + 'px';
     }
 }
 
