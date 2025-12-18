@@ -9,11 +9,10 @@ const messageArea = document.getElementById('message-area');
 const leaderboardList = document.getElementById('leaderboard-list'); 
 
 // 🔥 ADIM 1: Firebase Anonim Giriş Başlatma
-// Bu kod, güvenlik kurallarındaki "auth != null" şartını sağlar.
 firebase.auth().signInAnonymously()
     .then(() => {
         console.log("Firebase Anahtarı Alındı (Anonim Giriş Başarılı).");
-        fetchLeaderboard(); // Giriş başarılı olunca tabloyu çek
+        fetchLeaderboard(); 
     })
     .catch((error) => {
         console.error("Giriş Hatası:", error);
@@ -191,22 +190,19 @@ function startGame() {
     gameInterval = setInterval(updateGame, 1000 / 60);
 }
 
-// 🔥 ADIM 2: GÜNCELLENMİŞ GAME OVER (Güvenli Kayıt)
 function gameOver() {
     clearInterval(gameInterval);
     isPlaying = false;
     
-    const user = firebase.auth().currentUser; // Giriş yapmış kullanıcıyı al
+    const user = firebase.auth().currentUser;
 
     if (score > 0 && currentUsername && user) {
-        // scores/UID altına güvenli bir şekilde kaydet
         database.ref('scores/' + user.uid).set({ 
             name: currentUsername,
             score: score,
             timestamp: Date.now()
         }).then(() => {
-            console.log("Skor kaydedildi.");
-            fetchLeaderboard(); // Kayıt sonrası listeyi yenile
+            fetchLeaderboard(); 
         });
     }
 
@@ -221,10 +217,36 @@ function gameOver() {
 }
 
 // --------------------
-// EVENT LISTENERS
+// 🔥 GÜNCELLENMİŞ EVENT LISTENERS (Ekranın Her Yerine Dokunma)
 // --------------------
-messageArea.addEventListener('click', startGame);
-canvas.addEventListener('click', jump);
+
+// 1. Mouse Tıklaması (Tüm Sayfa)
+document.addEventListener('mousedown', (e) => {
+    // Eğer tıklanan yer "message-area" değilse zıpla
+    if (e.target.id !== 'message-area') {
+        if (isPlaying) {
+            jump();
+        } else if (messageArea.style.display === 'block' && currentUsername !== null) {
+            // Oyun bittiyse ve ekranda mesaj varsa herhangi bir yere tıklayınca başlasın
+            startGame();
+        }
+    }
+});
+
+// 2. Mobil Dokunma (Tüm Sayfa)
+document.addEventListener('touchstart', (e) => {
+    if (e.target.id !== 'message-area') {
+        if (isPlaying) {
+            jump();
+            // Mobilde tıklarken sayfanın kaymasını engelle
+            if (e.cancelable) e.preventDefault(); 
+        } else if (messageArea.style.display === 'block' && currentUsername !== null) {
+            startGame();
+        }
+    }
+}, { passive: false });
+
+// 3. Klavye Kontrolü
 document.addEventListener('keydown', (e) => {
     if (e.code === 'Space' || e.code === 'ArrowUp') {
         e.preventDefault();
@@ -232,39 +254,30 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// 🔥 ADIM 3: GÜNCELLENMİŞ LEADERBOARD
+// --------------------
+// LEADERBOARD VE DİĞER FONKSİYONLAR
+// --------------------
 function fetchLeaderboard() {
     if (!leaderboardList) return;
-    
-    database.ref('scores')
-        .orderByChild('score')
-        .limitToLast(5)
-        .once('value', (snapshot) => {
-            const scores = [];
-            snapshot.forEach(childSnapshot => {
-                scores.push(childSnapshot.val());
-            });
-
-            scores.sort((a, b) => b.score - a.score); // Büyükten küçüğe sırala
-            leaderboardList.innerHTML = ''; 
-
-            scores.forEach((item, index) => {
-                const listItem = document.createElement('li');
-                listItem.innerHTML = `<span>${index + 1}. ${item.name}</span><span>${item.score}</span>`;
-                leaderboardList.appendChild(listItem);
-            });
-        })
-        .catch(error => {
-            console.error("Skor çekme hatası:", error);
-            leaderboardList.innerHTML = '<li>Skorlar yüklenemedi.</li>';
+    database.ref('scores').orderByChild('score').limitToLast(5).once('value', (snapshot) => {
+        const scores = [];
+        snapshot.forEach(childSnapshot => { scores.push(childSnapshot.val()); });
+        scores.sort((a, b) => b.score - a.score);
+        leaderboardList.innerHTML = ''; 
+        scores.forEach((item, index) => {
+            const listItem = document.createElement('li');
+            listItem.innerHTML = `<span>${index + 1}. ${item.name}</span><span>${item.score}</span>`;
+            leaderboardList.appendChild(listItem);
         });
+    }).catch(error => {
+        console.error("Skor çekme hatası:", error);
+        leaderboardList.innerHTML = '<li>Skorlar yüklenemedi.</li>';
+    });
 }
 
-// 🔥 ADIM 4: MOBİL İÇİN DİNAMİK BOYUTLANDIRMA
 function resizeCanvas() {
     const container = document.getElementById('game-container');
     const containerWidth = container.clientWidth;
-
     if (containerWidth < WIDTH) {
         canvas.style.width = containerWidth + 'px';
         canvas.style.height = (containerWidth / (WIDTH / HEIGHT)) + 'px';
@@ -275,5 +288,5 @@ function resizeCanvas() {
 }
 
 window.addEventListener('resize', resizeCanvas);
-resizeCanvas(); // Açılışta çalıştır
+resizeCanvas();
 messageArea.style.display = 'block';
