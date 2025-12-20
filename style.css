@@ -1,3 +1,4 @@
+
 body {
     display: flex;
     justify-content: center;
@@ -108,13 +109,16 @@ body {
 #leaderboard-list {
     list-style-type: none;
     padding: 0;
+    /* 10 KİŞİ İÇİN EKLENEN GÜVENLİK ÖNLEMLERİ */
+    max-height: 350px; /* Liste çok uzayıp ekranı kaplamasın */
+    overflow-y: auto;  /* 10 kişi sığmazsa içinde kaydırılabilsin */
 }
 
 #leaderboard-list li {
     font-size: 1.1em;
-    padding: 5px 0;
+    padding: 8px 5px; /* Biraz daha rahat okunsun diye padding artırıldı */
     border-bottom: 1px dashed #444;
-    color: #fff; /* İsimlerin görünmesi için beyaz renk */
+    color: #fff; 
     display: flex;
     justify-content: space-between;
 }
