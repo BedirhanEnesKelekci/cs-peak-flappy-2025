@@ -176,7 +176,8 @@ window.addEventListener('keydown', (e) => {
 // SCOREBOARD & RESIZE
 // --------------------
 function fetchLeaderboard() {
-    database.ref('scores').orderByChild('score').limitToLast(5).once('value', (snapshot) => {
+    // BURASI GÜNCELLENDİ: limitToLast(5) -> limitToLast(10)
+    database.ref('scores').orderByChild('score').limitToLast(10).once('value', (snapshot) => {
         const scores = [];
         snapshot.forEach(child => {
             scores.push(child.val());
